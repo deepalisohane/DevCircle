@@ -2,17 +2,21 @@ const express = require('express');
 const connectDb = require('./config/database');  
 const User = require('./models/user');
 const bcrypt = require('bcryptjs');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const userAuth = require('./middleware/auth');
 
 const app = express();
 app.use(express.json()); // Middleware to parse JSON request body it will be executed for every API call as we have not specified any route here
+app.use(cookieParser()); // Middleware to parse cookies from request headers
 
 app.post('/signup', async (req, res) => {
 
     try{
-        const {password} = req.body; // Destructure password from request body
-        const hashedPassword = await bcrypt.hash(password, 10); // Hash the password using bcrypt
-        req.body.password = hashedPassword; // Replace the password in the request body with the hashed password
-        const user = new User(req.body); // Create a new user instance with the request body
+        const {password} = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+        req.body.password = hashedPassword;
+        const user = new User(req.body); 
         await user.save().then(() => {
         res.status(201).json({
             message: "User created successfully",
@@ -27,29 +31,42 @@ app.post('/signup', async (req, res) => {
 }); 
 
 app.post('/login', async (req, res) => {
-    const { email, password } = req.body; // Destructure email and password from request body
+    const { email, password } = req.body; 
     try {
-        const user = await User.findOne({ email }); // Find the user by email in the database    
+        const user = await User.findOne({ email });    
         if (!user) {
-            return res.status(404).json({
-                message: "User not found",
-            });
+            throw new Error("User not found in database"); 
         }
-        const isPasswordValid = await bcrypt.compare(password, user.password); // Compare the provided password with the hashed password in the database
+        const isPasswordValid = user.validatePassword(password);
         if (!isPasswordValid) {
-            return res.status(401).json({
-                message: "Invalid credentials",
-            });
+            throw new Error("Invalid credentials");
         }
+        const jwtToken = user.getJWT();
+        res.cookie('token', jwtToken, {expires: new Date(Date.now() + 8 * 3600000)});
         res.status(200).json({
             message: "Login successful",
         });
     } catch (err) {
         res.status(500).json({
-            message: "Error while logging in",
+            message: "Error while logging in", 
             error: err.message
         });
     }           
+});
+
+app.get('/profile', userAuth, async (req, res) => {
+    try{
+        const user = req.user;
+        res.status(200).json({
+            message: "User profile fetched successfully",
+            user: user
+        });
+    } catch (err) {
+        res.status(400).json({
+            message: "Error fetching user profile",
+            error: err.message
+        });
+    }
 });
 
 app.get('/feed', async (req, res) => {
@@ -70,9 +87,7 @@ app.delete('/user', async (req, res) => {
         const user = await User.findByIdAndDelete(userId);
         console.log(user);
         if(!user){
-            return res.status(404).json({
-                message: "User not found",
-            });
+            throw new Error("User not found in database");
         }
         else{
             res.status(200).json({
@@ -81,7 +96,7 @@ app.delete('/user', async (req, res) => {
         }
     }
     catch (err) {
-        res.status(500).json({
+        res.status(404).json({
             message: "Error deleting user",
             error: err.message
         });
@@ -95,16 +110,12 @@ app.patch('/user/:userId', async (req, res) => {
         const UPDATE_ALLOWED = ["age", "gender", "skills", "photoUrl", "about"];
         const isUpdateAllowed = Object.keys(userData).every((key) => UPDATE_ALLOWED.includes(key));
         if(!isUpdateAllowed){
-            return res.status(400).json({
-                message: "Invalid update fields",
-            });
+            throw new Error("Not allowed to update this field.");
         }
         const user = await User.findByIdAndUpdate(userId, userData, { runValidators: true });
         console.log(user);
         if(!user){
-            return res.status(404).json({
-                message: "User not found",
-            }); 
+            throw new Error("User not found in database"); 
         }
         else{
             res.status(200).json({
@@ -112,7 +123,7 @@ app.patch('/user/:userId', async (req, res) => {
             });
         }
     } catch (err) {
-        res.status(500).json({
+        res.status(404).json({
             message: "Error updating user",
             error: err.message
         });
