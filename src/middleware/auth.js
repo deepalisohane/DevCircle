@@ -8,7 +8,7 @@ const userAuth = async(req, res, next) => {
         if(!token) {
             throw new Error("Token not found in cookies");
         }
-        const decodedMessage = await jwt.verify(token, process.env.JWT_SECRET);
+        const decodedMessage = jwt.verify(token, process.env.JWT_SECRET_KEY);
         const { id } = decodedMessage;
         const user = await User.findById(id);
         if (!user) {

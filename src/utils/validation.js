@@ -9,4 +9,9 @@ const validatePassword = (givenpassword, storedPassword) => {
     return bcrypt.compare(givenpassword, storedPassword);
 }
 
-module.exports = {validateUserDataForEditProfile, validatePassword};
+const validateStatusForSendingRequest = (status) => {
+    const VALID_STATUSES = ['ignored', 'interested'];
+    return VALID_STATUSES.includes(status);
+};
+
+module.exports = {validateUserDataForEditProfile, validatePassword, validateStatusForSendingRequest};
