@@ -30,7 +30,7 @@ authrouter.post('/login', async (req, res) => {
         if (!user) {
             throw new Error("User not found in database"); 
         }
-        const isPasswordValid = user.validatePassword(password);
+        const isPasswordValid = await user.validatePassword(password);
         if (!isPasswordValid) {
             throw new Error("Invalid credentials");
         }
@@ -48,7 +48,7 @@ authrouter.post('/login', async (req, res) => {
 });
 
 authrouter.post('/logout', (req, res) => {
-    res.cookie('token', null, {expires: new Date(Date.now())});
+    res.clearCookie('token');
     res.status(200).json({
         message: "Logout successful",
     });

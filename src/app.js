@@ -15,7 +15,6 @@ app.use('/auth', authRouter);
 app.use('/profile', profileRouter);
 app.use('/request', requestRouter);
 
-// app.delete('/user', async (req, res) => {
 //     const userId = req.body.userId;
 //     try {
 //         const user = await User.findByIdAndDelete(userId);
