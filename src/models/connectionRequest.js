@@ -19,7 +19,7 @@ const connectionRequestSchema = new mongoose.Schema({
 connectionRequestSchema.pre('save', function(next) {
     const connectionRequest = this;
     if(connectionRequest.toUserId.toString() === connectionRequest.fromUserId.toString()){
-        throw new Error("Cannot send connection request to self.");
+        return next(new Error("Cannot send connection request to self."));
     }
     next();
 });

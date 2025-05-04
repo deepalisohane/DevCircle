@@ -13,6 +13,9 @@ app.use('/auth', authRouter);
 describe('Auth Routes', () => {
 
     describe('POST auth/signup', () => {
+        beforeEach(async () => {
+            await User.deleteMany({});
+        });
 
         it('should create a new user with valid data', async () => {
             const response = await request(app).post('/auth/signup').send(validUser);
@@ -26,21 +29,21 @@ describe('Auth Routes', () => {
         it('should not create a user with invalid data', async () => {
             const response = await request(app).post('/auth/signup').send(invalidUser);
             expect(response.statusCode).toBe(500);
-            expect(response.body.message).toBe("ERORR: Error creating user");
+            expect(response.body.message).toBe("ERROR: Error creating user");
         });
 
         //currently, the test is failing
         it('should fail with duplicate email', async () => {
-            await new User(validUser).save();
-            const response = await request(app).post('/auth/signup').send(validUser);
-            expect(response.statusCode).toBe(500);
-            expect(response.body.message).toBe("ERORR: Error creating user");
+            const response1 = await request(app).post('/auth/signup').send(validUser);
+            const response2 = await request(app).post('/auth/signup').send(validUser);
+            expect(response2.statusCode).toBe(400);
+            expect(response2.body.message).toBe("Email already in use");
         });
     });
 });
 
 describe('POST auth/login', () => {
-
+    jest.setTimeout(10000);
     beforeEach(async () => {
         const user = new User(validUser);
         user.password = await require('bcryptjs').hash(validUser.password, 10);

@@ -15,9 +15,15 @@ authrouter.post('/signup', async (req, res) => {
             message: "User created successfully",
             user: user
         });
-    })} catch (err){
+    })} catch (err) {
+        if (err.code === 11000) {
+            return res.status(400).json({
+                message: "Email already in use",
+                error: err.message
+            });
+        }
         res.status(500).json({
-            message: "ERORR: Error creating user",
+            message: "ERROR: Error creating user",
             error: err.message
         });
     };

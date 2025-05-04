@@ -1,4 +1,5 @@
 const validator = require('validator');
+const bcrypt = require('bcryptjs');
 
 const validateUserDataForEditProfile = (data) => { 
     const UPDATE_ALLOWED = ["firstName", "lastName", "email", "age", "gender", "skills", "photoUrl", "about"];

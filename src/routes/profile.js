@@ -3,6 +3,7 @@ const profileRouter = express.Router();
 const userAuth = require('../middleware/auth');
 const User = require('../models/user'); 
 const { validateUserDataForEditProfile, validatePassword } = require('../utils/validation');
+const bcrypt = require('bcryptjs');
 
 profileRouter.get('/view', userAuth, async (req, res) => {
     try{
@@ -48,7 +49,10 @@ profileRouter.patch('/password', userAuth, async (req, res) => {
         if (!oldPassword || !newPassword) {
             throw new Error("Please provide both old and new passwords");
         }
-        const isPasswordValid = validatePassword(oldPassword, loggedInUser.password);
+        if(oldPassword === newPassword){
+            throw new Error("New password cannot be same as old password");
+        }
+        const isPasswordValid = await validatePassword(oldPassword, loggedInUser.password);
         if (!isPasswordValid) {
             throw new Error("Invalid credentials");
         }

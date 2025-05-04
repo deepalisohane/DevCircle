@@ -3,7 +3,7 @@ const bcryptjs = require('bcryptjs');
 const User = require('../../src/models/user');
 const jwtToken = require('jsonwebtoken');
 const {validUser, invalidUser} = require('../mockdata');
-const {validatePassword} = require('../../src/utils/validation');
+const { validateUserDataForEditProfile } = require('../../src/utils/validation');
 
 describe('User Model', () => {
 
@@ -49,6 +49,11 @@ describe('User Model', () => {
     it('should fail if skills array has more than 20 items', async () => {
         const user = new User({ ...validUser, skills: Array(21).fill('react') });
         await expect(user.save()).rejects.toThrow(mongoose.Error.ValidationError);
+    });
+
+    it('should not able to update the not allowed fields', async () => {
+        expect(validateUserDataForEditProfile('password')).toBe(false);
+        expect(validateUserDataForEditProfile(' ')).toBe(false);
     });
   });
 });

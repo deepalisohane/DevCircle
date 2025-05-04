@@ -21,7 +21,7 @@ beforeAll(async () => {
   }
 });
 
-afterEach(async () => {
+beforeEach(async () => {
   if (mongoose.connection.readyState === 1) {
     // Only drop database if connected
     await mongoose.connection.db.dropDatabase();
