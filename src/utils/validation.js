@@ -15,4 +15,11 @@ const validateStatusForSendingRequest = (status) => {
     return VALID_STATUSES.includes(status);
 };
 
-module.exports = {validateUserDataForEditProfile, validatePassword, validateStatusForSendingRequest};
+const validateStatusForReviewingRequest = (status) => {
+    const VALID_STATUSES = ['accepted', 'rejected'];
+    return VALID_STATUSES.includes(status);
+};
+
+module.exports = {
+    validateUserDataForEditProfile, validatePassword, validateStatusForSendingRequest, validateStatusForReviewingRequest
+};

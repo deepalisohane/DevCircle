@@ -2,7 +2,7 @@ const express = require('express');
 const requestRouter = express.Router();
 const userAuth = require('../middleware/auth');
 const ConnectionRequest = require('../models/connectionRequest');
-const { validateStatusForSendingRequest } = require('../utils/validation');
+const { validateStatusForSendingRequest, validateStatusForReviewingRequest } = require('../utils/validation');
 const User = require('../models/user');
 
 requestRouter.post('/send/:status/:touserid', userAuth, async (req, res) => {
@@ -31,7 +31,7 @@ requestRouter.post('/send/:status/:touserid', userAuth, async (req, res) => {
         });
         if (existingRequest) {
             return res.status(400).json({ message: "Connection request already exists" });
-        }
+        } 
         const connectionRequest = new ConnectionRequest({
             fromUserId,
             toUserId,
@@ -44,10 +44,47 @@ requestRouter.post('/send/:status/:touserid', userAuth, async (req, res) => {
         });
     } catch (err) {
         res.status(400).json({
-            message: "Error processing request",
+            message: "Error processing send connection request",
             error: err.message
         });
     }
+});
+
+
+requestRouter.post('/review/:status/:requestid', userAuth, async (req, res) => {
+    try{
+        const loggedInUserId = req.user._id;
+        const requestId = req.params.requestid;
+        const status = req.params.status;
+
+        const checkStatusIsValidForReviewingRequest = validateStatusForReviewingRequest(status);
+        if (!checkStatusIsValidForReviewingRequest) {
+            return res.status(400).json({ message: "Invalid status for reviewing request: status should be 'accepted' or 'rejected' and is: " + status });
+        }
+
+        const connectionRequest = await ConnectionRequest.findOne({
+            _id: requestId,
+            toUserId: loggedInUserId._id,
+            status: 'interested'
+        });
+
+        if (!connectionRequest) {
+            return res.status(404).json({ message: "Connection request not found or already reviewed" });
+        }
+        connectionRequest.status = status;
+        const data = await connectionRequest.save();
+        res.status(200).json({
+            message: `Connection request ${status} by ${req.user.firstName}`,
+            data: data
+        }); 
+
+    }catch (err) { 
+        return res.status(400).json({
+            message: "Error processing review connection request",
+            error: err.message
+        });
+    }
+    
 });
 
 module.exports = requestRouter;
